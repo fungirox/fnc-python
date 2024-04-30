@@ -35,7 +35,7 @@ class Clause:
         for atom in self.clause_atoms:
             c = Clause()
             a = atom.__copy__()
-            a.not_atom()
+            a = a.not_atom()
             c.clause_atoms.append(a)
             f = f.and_clause(c)
         return f
