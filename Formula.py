@@ -7,7 +7,7 @@ class Formula:
         for index,clauses in enumerate(self.clauses):
             string += clauses.__str__()
             if index != len(self.clauses) - 1:
-                string += '\n'
+                string += ' \n '
         string += ']'
         return string
 
@@ -18,14 +18,14 @@ class Formula:
                 f.clauses.append(clause.__copy__())
         return f
 
-    def and_clause(self,obj_clause):
+    def and_clause_formula(self, obj_clause):
         f = Formula()
         for clause in self.clauses:
             f.clauses.append(clause.__copy__())
-        f.clauses.append(obj_clause)
+        f.clauses.append(obj_clause.__copy__())
         return f
 
-    def or_formula(self,obj_formula):
+    def or_formula(self, obj_formula):
         f = Formula()
         for clause in self.clauses:
             for clause2 in obj_formula.clauses:
@@ -44,7 +44,7 @@ class Formula:
         f = Formula()
         for clause in self.clauses:
             not_clause = clause.not_clause()
-            f = f.and_formula(not_clause)
+            f = f.or_formula(not_clause) if f.clauses else not_clause
         return f
 
     def get_david_putman(self):
@@ -66,7 +66,7 @@ class Formula:
                                 witness[a.name] = not a.neg
                                 for c_clear in self.clauses:
                                     if c_clear != c:
-                                        c_clear.delete_atomo(a)
+                                        c_clear.delete_atom(a)
                                 self.clauses.remove(c)
                             # aplicar LP
                             else:
