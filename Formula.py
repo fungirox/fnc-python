@@ -103,23 +103,27 @@ class Formula:
                 'SAT': witness}
 
     def GSAT(self):
-        f = Formula()
         f = self.__copy__()
         witness = f.get_atoms()
-        tries = 5
-        flips = 3
-        print(f'witness {witness}')
+        tries = 10
         while tries > 0:
-            flips = 3
+            flips = 5
             while flips > 0:
                 solucion = f.solucionar_formula(witness)
                 if solucion == 1:
-                    return witness
+                    return f.format_g_sat(witness)
                 else:
                     witness[random.choice(list(witness.keys()))] = True if random.random() >= 0.5 else False
                 flips = flips - 1
             tries = tries - 1
         return 'No se encontró solucion a la formula'
+
+    def format_g_sat(self, witness):
+        certificado = []
+        for name,value in witness.items():
+            string = '-' + name if value else name
+            certificado.append(string)
+        return certificado
 
     def solucionar_formula(self,witness):
         clausulas_solucion = 0
