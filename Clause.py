@@ -81,9 +81,11 @@ class Clause:
         return c
 
     def delete_atom(self, del_atom):
+        c = Clause()
         for atom in self.clause_atoms:
-            if atom.name == del_atom.name:
-                self.clause_atoms.remove(atom)
+            if atom.name != del_atom.name:
+                c.clause_atoms.append(atom.__copy__())
+        return c
 
     def literal(self, del_atom):
         for atom in self.clause_atoms:

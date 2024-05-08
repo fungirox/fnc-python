@@ -20,7 +20,7 @@ def infijo2postfijo(infijo):
     postfijo = []
     pila = []
     for ch in infijo:
-        p=get_prioridad(ch)
+        p = get_prioridad(ch)
         if p == -1:
             pila.append(ch)
         elif p == -2:
@@ -55,7 +55,7 @@ def get_prioridad(operator):
 
 
 def evaluar(postfijo):
-    pila=[]
+    stack = []
     for ch in postfijo:
         p = get_prioridad(ch)
         if p==0: #Si es igual a 0 es un operando y se convierte en formula y mete a pila
@@ -64,49 +64,48 @@ def evaluar(postfijo):
             f = Formula()
             c = c.or_atom(a)
             c = f.and_clause(c)
-            pila.append(c)
+            stack.append(c)
         elif p == 1: #Si es igual a 1 es or y se convierte en formula y mete a pila
-            b = pila.pop()
-            a = pila.pop()
+            b = stack.pop()
+            a = stack.pop()
             c = a.or_formula(b)
-            pila.append(c)
+            stack.append(c)
         elif p == 2: #2 es igual a And y se convierte en formula y mete a pila
-            b = pila.pop()
-            a = pila.pop()
+            b = stack.pop()
+            a = stack.pop()
             c = a.and_formula(b)
-            pila.append(c)
+            stack.append(c)
         elif p == 3: #3 es entonces y se convierte en formula y mete a pila
-            b = pila.pop()
-            a = pila.pop()
+            b = stack.pop()
+            a = stack.pop()
             a = a.not_formula()
             c = a.or_formula(b)
-            pila.append(c)
+            stack.append(c)
         elif p == 4: #4 es Si solo Si y se convierte en formula y mete a pila
-            b = pila.pop()
-            a = pila.pop()
+            b = stack.pop()
+            a = stack.pop()
             an = a.not_formula()
             bn = b.not_formula()
             c = a.or_formula(bn)
             d = b.or_formula(an)
             c = c.and_formula(d)
-            pila.append(c) #No esta completo
+            stack.append(c) #No esta completo
         elif p == 5: #5 es Not y convierte en formula y mete a pila
-            a = pila.pop()
+            a = stack.pop()
             c = a.not_formula()  #Falta por hacer
-            pila.append(c)
-    return pila.pop() #No esta completo
+            stack.append(c)
+    return stack.pop() #No esta completo
 
 for linea in lines:
-    # print(f'Linea: {linea}')
     infijo = re.findall("(\\w+|\\||\\&|\\>|\\-|\\(|\\)|\\=)",linea)
-    #infijo = re.findall("(\w+|\||\&|\>|\-|\(|\)|\=)", linea)
-    # print(f'Infijo: {infijo}')
     postfijo = infijo2postfijo(infijo)
-    # print(f'Postfijo: {postfijo}')
     fnc = evaluar(postfijo)
     print(f'FNC: \n{fnc}\n')
-# sinTautologia = fnc.delete_tautologia()
-# print(f'{sinTautologia}\n')
-# david_putnam = sinTautologia.get_david_putman()
-# print(f'{david_putnam}')
-print(fnc.get_david_putman())
+
+# davis = fnc.get_david_putman()
+# print(f'SAT: {davis["SAT"]}')
+# print(f'Formula: {davis["formula"]}')
+
+resultado = fnc.get_david_putman()
+print(f'Formula: {resultado["formula"]}')
+print(f'SAT: {resultado["SAT"]}')

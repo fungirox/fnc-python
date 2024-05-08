@@ -1,6 +1,16 @@
+import random
+
+
 class Formula:
     def __init__(self):
         self.clauses = []
+        self.bifurcation = 0
+
+    def __copy__(self):
+        f = Formula()
+        for c in self.clauses:
+            f.clauses.append(c)
+        return f
 
     def __str__(self):
         string = '['
@@ -48,44 +58,81 @@ class Formula:
         return f
 
     def get_david_putman(self):
-        f = Formula()
         f = self.delete_tautology()
         witness = {}
 
-        if self.clauses:
-            print('evalular')
-            while self.clauses:
-                for c in self.clauses:
-                    print(f'formula:\n{self}')
-                    print(f'clasula:\n{c}\n')
-                    if c.clause_atoms:
-                        if self.clauses:
+        if f.clauses:
+            while f.clauses:
+                for clause in f.clauses:
+                    clause_copy = clause.__copy__()
+                    print(f'formula:\n{f}')
+                    print(f'clasula:\n{clause_copy}\n')
+                    if clause_copy.clause_atoms:
+                        if f.clauses:
                             # aplicar clausula unitaria
-                            if len(c.clause_atoms) == 1:
-                                a = c.get_atom()
+                            if len(clause_copy.clause_atoms) == 1:
+                                a = clause_copy.get_atom()
                                 witness[a.name] = not a.neg
-                                for c_clear in self.clauses:
-                                    if c_clear != c:
-                                        c_clear.delete_atomo(a)
-                                self.clauses.remove(c)
+                                for c_clear in f.clauses:
+                                    if c_clear != clause_copy:
+                                        c_clear = c_clear.delete_atom(a)
+                                f.clauses.remove(clause_copy)
                             # aplicar LP
                             else:
                                 # el primer atomo de la clausula que estemos evaluando
-                                a_lp = c.get_atom()
+                                a_lp = clause_copy.get_atom()
                                 witness[a_lp.name] = not a_lp.neg
-                                for c_clear in self.clauses:
-                                    if c_clear != c:
+                                for c_clear in f.clauses:
+                                    if c_clear != clause_copy:
                                         if c_clear.literal(a_lp):
-                                            self.clauses.remove(c_clear)
-                                self.clauses.remove(c)
+                                            f.clauses.remove(c_clear)
+                                f.clauses.remove(clause_copy)
                         else:
                             print('SAT verdad')
                     else:
-                        print('lado izq del diagrama')
-                    print(f'clausula:\n{c}')
-                    print(f'formula:\n{self}\n')
+                        f.bifurcation = f.bifurcation + 1
+                        return {'formula': f,
+                                'SAT': witness}
+                    print(f'clausula:\n{clause}')
+                    print(f'formula:\n{f}\n')
+
         else:
             print('SAT verdad')
 
-        return witness
+        return {'formula': f,
+                'SAT': witness}
 
+    def GSAT(self):
+        f = self.__copy__()
+        witness = f.get_atoms()
+        tries = 5
+        print(f'witness {witness}')
+        while tries > 0:
+            flips = 3
+            while flips > 0:
+                solucion = f.solucionar_formula(witness)
+                if solucion == 1:
+                    return witness
+                else:
+                    witness[random.choice(list(witness.keys()))] = True if random.random() >= 0.5 else False
+                flips = flips - 1
+            tries = tries - 1
+        return 'No se encontró solucion a la formula'
+
+    def solucionar_formula(self,witness):
+        clausulas_solucion = 0
+        clausulas = len(self.clauses)
+        for clause in self.clauses:
+            for atom in clause.clause_atoms:
+                if witness[atom.name] == atom.neg:
+                    clausulas_solucion = clausulas_solucion + 1
+                    break
+        return clausulas_solucion / clausulas
+
+    def get_atoms(self):
+        atoms = {}
+        for clause in self.clauses:
+            for atom in clause.clause_atoms:
+                if atom not in atoms:
+                    atoms[atom.name] = True if random.random() >= 0.5 else False
+        return atoms
