@@ -106,6 +106,4 @@ for linea in lines:
 # print(f'SAT: {davis["SAT"]}')
 # print(f'Formula: {davis["formula"]}')
 
-resultado = fnc.get_david_putman()
-print(f'Formula: {resultado["formula"]}')
-print(f'SAT: {resultado["SAT"]}')
+print(fnc.davis_and_putnam())

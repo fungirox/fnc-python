@@ -1,15 +1,21 @@
+import copy
 import random
+
+from Atom import Atom
 
 
 class Formula:
     def __init__(self):
         self.clauses = []
-        self.bifurcation = 0
+        self.witness = {}
+        self.bifurcation_counter = 0
 
     def __copy__(self):
         f = Formula()
+        f.witness = self.witness
+        f.bifurcation_counter = self.bifurcation_counter + 1
         for c in self.clauses:
-            f.clauses.append(c)
+            f.clauses.append(c.__copy__())
         return f
 
     def __str__(self):
@@ -90,7 +96,7 @@ class Formula:
                         else:
                             print('SAT verdad')
                     else:
-                        f.bifurcation = f.bifurcation + 1
+                        f.bifurcation_counter = f.bifurcation_counter + 1
                         return {'formula': f,
                                 'SAT': witness}
                     print(f'clausula:\n{clause}')
@@ -101,6 +107,85 @@ class Formula:
 
         return {'formula': f,
                 'SAT': witness}
+
+    def davis_and_putnam(self):
+        empty_clause = False
+        for clause in self.clauses:
+            if not clause.clause_atoms:
+                empty_clause = True
+                break
+        if empty_clause:
+            if self.bifurcation_counter == 1:
+                return self.bifurcation()
+            else:
+                return False
+        elif self.clauses:
+            if self.unit_clause() or self.pure_literal():
+                return self.davis_and_putnam()
+            else:
+                return self.bifurcation()
+        else:
+            return True
+
+    def bifurcation(self):
+        try :
+            clause = random.choice(self.clauses)
+            atom = random.choice(clause.clause_atoms)
+        except :
+            return False
+        f_copy = self.__copy__()
+        atom = atom.__copy__()
+        f_copy.witness[atom.name] = atom
+        f_copy.simplifly(atom)
+        if f_copy.davis_and_putnam():
+            return True
+        f_copy = self.__copy__()
+        atom = atom.__copy__()
+        atom = atom.not_atom()
+        f_copy.witness[atom.name] = atom
+        f_copy.simplifly(atom)
+        return f_copy.davis_and_putnam()
+
+
+    def simplifly(self,atom):
+        simplifly_clauses = []
+        for clause in self.clauses:
+            if atom not in clause.clause_atoms:
+                simplifly_clauses.append(clause)
+            elif atom.neg != clause.clause_atoms[clause.clause_atoms.index(atom)].neg:
+                del clause.clause_atoms[atom.name]
+                simplifly_clauses.append(clause)
+        self.clauses = simplifly_clauses
+
+    def pure_literal(self):
+        pure_literal_valid = False
+        witness = {}
+        for clause in self.clauses:
+            for atom in clause.clause_atoms:
+                if atom.name not in witness:
+                    if atom.neg != witness[atom.name]:
+                        witness[atom.name] = None
+                    else:
+                        witness[atom.name] = atom.neg
+        for name,neg in witness.items():
+            if neg is not None:
+                pure_literal_valid = True
+                atom = Atom(name)
+                atom.neg = neg
+                self.witness[name] = atom
+                self.simplifly(atom)
+        return pure_literal_valid
+
+    def unit_clause(self):
+        unit_clause_valid = False
+        uc = [c for c in self.clauses if len(c.clause_atoms) == 1]
+        while uc:
+            unit_clause_valid = True
+            atom = list(uc[0].clause_atoms)[0]
+            self.witness[atom.name] = atom
+            self.simplifly(atom)
+            uc = [c for c in self.clauses if len(c.clause_atoms) == 1]
+        return unit_clause_valid
 
     def GSAT(self):
         f = self.__copy__()
