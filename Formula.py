@@ -34,14 +34,14 @@ class Formula:
                 f.clauses.append(clause.__copy__())
         return f
 
-    def and_clause(self,obj_clause):
+    def and_clause_formula(self, obj_clause):
         f = Formula()
         for clause in self.clauses:
             f.clauses.append(clause.__copy__())
-        f.clauses.append(obj_clause)
+        f.clauses.append(obj_clause.__copy__())
         return f
 
-    def or_formula(self,obj_formula):
+    def or_formula(self, obj_formula):
         f = Formula()
         for clause in self.clauses:
             for clause2 in obj_formula.clauses:
@@ -60,53 +60,8 @@ class Formula:
         f = Formula()
         for clause in self.clauses:
             not_clause = clause.not_clause()
-            f = f.and_formula(not_clause)
+            f = f.or_formula(not_clause) if f.clauses else not_clause
         return f
-
-    def get_david_putman(self):
-        f = self.delete_tautology()
-        witness = {}
-
-        if f.clauses:
-            while f.clauses:
-                for clause in f.clauses:
-                    clause_copy = clause.__copy__()
-                    print(f'formula:\n{f}')
-                    print(f'clasula:\n{clause_copy}\n')
-                    if clause_copy.clause_atoms:
-                        if f.clauses:
-                            # aplicar clausula unitaria
-                            if len(clause_copy.clause_atoms) == 1:
-                                a = clause_copy.get_atom()
-                                witness[a.name] = not a.neg
-                                for c_clear in f.clauses:
-                                    if c_clear != clause_copy:
-                                        c_clear = c_clear.delete_atom(a)
-                                f.clauses.remove(clause_copy)
-                            # aplicar LP
-                            else:
-                                # el primer atomo de la clausula que estemos evaluando
-                                a_lp = clause_copy.get_atom()
-                                witness[a_lp.name] = not a_lp.neg
-                                for c_clear in f.clauses:
-                                    if c_clear != clause_copy:
-                                        if c_clear.literal(a_lp):
-                                            f.clauses.remove(c_clear)
-                                f.clauses.remove(clause_copy)
-                        else:
-                            print('SAT verdad')
-                    else:
-                        f.bifurcation_counter = f.bifurcation_counter + 1
-                        return {'formula': f,
-                                'SAT': witness}
-                    print(f'clausula:\n{clause}')
-                    print(f'formula:\n{f}\n')
-
-        else:
-            print('SAT verdad')
-
-        return {'formula': f,
-                'SAT': witness}
 
     def davis_and_putnam(self):
         empty_clause = False
@@ -120,7 +75,9 @@ class Formula:
             else:
                 return False
         elif self.clauses:
-            if self.unit_clause() or self.pure_literal():
+            unit_clause = self.unit_clause()
+            pure_literal = self.pure_literal()
+            if unit_clause or pure_literal:
                 return self.davis_and_putnam()
             else:
                 return self.bifurcation()
@@ -128,32 +85,30 @@ class Formula:
             return True
 
     def bifurcation(self):
-        try :
-            clause = random.choice(self.clauses)
-            atom = random.choice(clause.clause_atoms)
-        except :
-            return False
+        clause = random.choice(self.clauses)
+        atom = random.choice(clause.clause_atoms)
         f_copy = self.__copy__()
         atom = atom.__copy__()
-        f_copy.witness[atom.name] = atom
+        f_copy.witness[atom.name] = atom.neg
         f_copy.simplifly(atom)
         if f_copy.davis_and_putnam():
             return True
         f_copy = self.__copy__()
         atom = atom.__copy__()
         atom = atom.not_atom()
-        f_copy.witness[atom.name] = atom
+        f_copy.witness[atom.name] = atom.neg
         f_copy.simplifly(atom)
         return f_copy.davis_and_putnam()
 
 
-    def simplifly(self,atom):
+    def simplifly(self, atom):
         simplifly_clauses = []
         for clause in self.clauses:
-            if atom not in clause.clause_atoms:
+            atom_index = clause.find_atom_index(atom)
+            if atom_index == -1:
                 simplifly_clauses.append(clause)
-            elif atom.neg != clause.clause_atoms[clause.clause_atoms.index(atom)].neg:
-                del clause.clause_atoms[atom.name]
+            elif atom.neg != clause.clause_atoms[atom_index].neg:
+                del clause.clause_atoms[atom_index]
                 simplifly_clauses.append(clause)
         self.clauses = simplifly_clauses
 
@@ -162,17 +117,17 @@ class Formula:
         witness = {}
         for clause in self.clauses:
             for atom in clause.clause_atoms:
-                if atom.name not in witness:
+                if atom.name in witness:
                     if atom.neg != witness[atom.name]:
                         witness[atom.name] = None
-                    else:
-                        witness[atom.name] = atom.neg
+                else:
+                    witness[atom.name] = atom.neg
         for name,neg in witness.items():
             if neg is not None:
                 pure_literal_valid = True
                 atom = Atom(name)
                 atom.neg = neg
-                self.witness[name] = atom
+                self.witness[name] = atom.neg
                 self.simplifly(atom)
         return pure_literal_valid
 
@@ -182,7 +137,7 @@ class Formula:
         while uc:
             unit_clause_valid = True
             atom = list(uc[0].clause_atoms)[0]
-            self.witness[atom.name] = atom
+            self.witness[atom.name] = atom.neg
             self.simplifly(atom)
             uc = [c for c in self.clauses if len(c.clause_atoms) == 1]
         return unit_clause_valid
@@ -213,6 +168,13 @@ class Formula:
                     clausulas_solucion = clausulas_solucion + 1
                     break
         return clausulas_solucion / clausulas
+
+    def format(self, witness):
+        certificado = []
+        for name, value in witness.items():
+            string = '-' + name if value else name
+            certificado.append(string)
+        return certificado
 
     def get_atoms(self):
         atoms = {}

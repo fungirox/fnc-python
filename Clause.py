@@ -35,9 +35,9 @@ class Clause:
         for atom in self.clause_atoms:
             c = Clause()
             a = atom.__copy__()
-            a.not_atom()
-            c.clause_atoms.append(a)
-            f = f.and_clause(c)
+            a = a.not_atom()
+            c = c.or_atom(a)
+            f = f.and_clause_formula(c)
         return f
 
     def get_atom(self):
@@ -53,39 +53,37 @@ class Clause:
     def or_atom(self,obj_atom):
         c = Clause()
         for atom in self.clause_atoms:
-            c.clause_atoms.append(atom.__copy__())
+            c = c.or_atom(atom.__copy__())
         if self.comparate_atom(obj_atom):
             c.clause_atoms.append(obj_atom.__copy__())
         return c
 
     def and_atom(self,obj_atom):
         f = Formula()
-        f = f.and_clause(self.__copy__())
+        f = f.and_clause_formula(self.__copy__())
         c = Clause()
         c = c.or_atom(obj_atom.__copy__())
-        f = f.and_clause(c)
+        f = f.and_clause_formula(c)
         return f
 
     def and_clause(self,clause):
         f = Formula()
-        f = f.and_clause(self)
-        f = f.and_clause(clause)
+        f = f.and_clause_formula(self.__copy__())
+        f = f.and_clause_formula(clause.__copy__())
         return f
 
     def or_clause(self,obj_clause):
         c = Clause()
         for atom in self.clause_atoms:
-            c.clause_atoms.append(atom.__copy__())
+            c = c.or_atom(atom.__copy__())
         for atom in obj_clause.clause_atoms:
-            c.clause_atoms.append(atom.__copy__())
+            c = c.or_atom(atom.__copy__())
         return c
 
     def delete_atom(self, del_atom):
-        c = Clause()
         for atom in self.clause_atoms:
-            if atom.name != del_atom.name:
-                c.clause_atoms.append(atom.__copy__())
-        return c
+            if atom.name == del_atom.name:
+                self.clause_atoms.remove(atom)
 
     def literal(self, del_atom):
         for atom in self.clause_atoms:
@@ -95,3 +93,10 @@ class Clause:
                     return False
                 else:
                     return True
+    def find_atom_index(self,find_atom):
+        index = 0
+        for atom in self.clause_atoms:
+            if atom.name == find_atom.name:
+                return index
+            index = index + 1
+        return -1
